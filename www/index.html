@@ -578,6 +578,10 @@ function showLearnChar(idx) {
     switchPage('home');
     return;
   }
+  // 切换汉字时关闭描红画布
+  let cvs = document.getElementById('free-draw-canvas');
+  if (canvasVisible) { cvs.style.display = 'none'; canvasVisible = false; drawMode = null; }
+  document.getElementById('btn-clear-canvas').style.display = 'none';
   let ch = learnModeUnits[idx];
   currentCharData = ch;
   currentChar = ch.c;
@@ -642,62 +646,122 @@ function showStaticChar(ch) {
   c.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;min-height:200px"><span style="font-size:120px;font-family:serif;color:#333">' + ch + '</span></div>';
 }
 
-function startTraceQuiz() {
-  if (!currentChar) return;
-  let canvas = document.getElementById('free-draw-canvas');
-  let btn = document.getElementById('btn-clear-canvas');
-  if (canvas.style.display !== 'none') {
-    canvas.style.display = 'none'; btn.style.display = 'none'; return;
-  }
-  canvas.style.display = 'block'; btn.style.display = 'inline-flex';
-  drawCtx = canvas.getContext('2d');
-  drawMode = 'trace';
-  drawCtx.clearRect(0, 0, 560, 560);
-  drawCtx.fillStyle = '#e0e0e0';
-  drawCtx.font = '280px "Noto Serif CJK SC","Source Han Serif SC","SimSun",serif';
-  drawCtx.textAlign = 'center'; drawCtx.textBaseline = 'middle';
-  drawCtx.fillText(currentChar, 280, 280);
-  drawCtx.strokeStyle = '#e24b4a'; drawCtx.lineWidth = 10;
-  drawCtx.lineCap = 'round'; drawCtx.lineJoin = 'round';
-  canvas.ontouchstart = canvas.onpointerdown = e => { e.preventDefault(); drawDrawing = true; drawCtx.beginPath(); let r = canvas.getBoundingClientRect(); let x = e.clientX != null ? e.clientX : e.touches[0].clientX; let y = e.clientY != null ? e.clientY : e.touches[0].clientY; drawCtx.moveTo((x - r.left) * 2, (y - r.top) * 2); };
-  canvas.ontouchmove = canvas.onpointermove = e => { e.preventDefault(); if (!drawDrawing) return; let r = canvas.getBoundingClientRect(); let x = e.clientX != null ? e.clientX : e.touches[0].clientX; let y = e.clientY != null ? e.clientY : e.touches[0].clientY; drawCtx.lineTo((x - r.left) * 2, (y - r.top) * 2); drawCtx.stroke(); };
-  canvas.ontouchend = canvas.onpointerup = () => { drawDrawing = false; };
-  canvas.onpointerleave = () => { drawDrawing = false; };
+let drawCtx = null, drawDrawing = false, drawMode = null; // 'trace' | 'free'
+let canvasVisible = false;
+
+function getTouchPos(e) {
+  // 统一从 touch 或 pointer 事件中取坐标
+  let t = e.touches ? e.touches[0] : e;
+  return { x: t.clientX, y: t.clientY };
 }
 
-let drawCtx = null, drawDrawing = false, drawMode = null; // 'trace' | 'free'
-function startFreeDraw() {
+let canvasAbort = null;
+
+function bindCanvasEvents(canvas) {
+  // 移除旧的事件监听器
+  if (canvasAbort) { canvasAbort.abort(); }
+  canvasAbort = new AbortController();
+  let sig = { signal: canvasAbort.signal };
+
+  let lastTs = 0;
+  function onStart(e) {
+    // 防止 pointer + touch 双重触发（50ms 内忽略重复）
+    let now = Date.now();
+    if (now - lastTs < 50) return;
+    lastTs = now;
+    e.preventDefault();
+    drawDrawing = true;
+    drawCtx.beginPath();
+    let r = canvas.getBoundingClientRect();
+    let p = getTouchPos(e);
+    let sx = (p.x - r.left) * (560 / r.width);
+    let sy = (p.y - r.top) * (560 / r.height);
+    drawCtx.moveTo(sx, sy);
+  }
+  function onMove(e) {
+    e.preventDefault();
+    if (!drawDrawing) return;
+    let r = canvas.getBoundingClientRect();
+    let p = getTouchPos(e);
+    let sx = (p.x - r.left) * (560 / r.width);
+    let sy = (p.y - r.top) * (560 / r.height);
+    drawCtx.lineTo(sx, sy);
+    drawCtx.stroke();
+  }
+  function onEnd(e) { drawDrawing = false; }
+
+  canvas.addEventListener('touchstart', onStart, { passive: false, ...sig });
+  canvas.addEventListener('touchmove', onMove, { passive: false, ...sig });
+  canvas.addEventListener('touchend', onEnd, sig);
+  canvas.addEventListener('touchcancel', onEnd, sig);
+  canvas.addEventListener('pointerdown', onStart, sig);
+  canvas.addEventListener('pointermove', onMove, sig);
+  canvas.addEventListener('pointerup', onEnd, sig);
+  canvas.addEventListener('pointerleave', onEnd, sig);
+}
+
+function setupCanvas(mode) {
+  if (!currentChar && mode === 'trace') return;
   let canvas = document.getElementById('free-draw-canvas');
   let btn = document.getElementById('btn-clear-canvas');
-  if (canvas.style.display !== 'none') {
-    canvas.style.display = 'none'; btn.style.display = 'none'; return;
+
+  // 切换模式：已显示且同模式 → 关闭；已显示不同模式 → 切换
+  if (canvasVisible && drawMode === mode) {
+    canvas.style.display = 'none'; btn.style.display = 'none';
+    canvasVisible = false; drawMode = null; return;
   }
-  canvas.style.display = 'block'; btn.style.display = 'inline-flex';
+
+  canvasVisible = true;
+  drawMode = mode;
+  canvas.style.display = 'block';
+  btn.style.display = 'inline-flex';
   drawCtx = canvas.getContext('2d');
-  drawMode = 'free';
-  drawCtx.fillStyle = '#f5f7fa'; drawCtx.fillRect(0, 0, 560, 560);
-  drawCtx.strokeStyle = '#333'; drawCtx.lineWidth = 8;
-  drawCtx.lineCap = 'round'; drawCtx.lineJoin = 'round';
-  canvas.ontouchstart = canvas.onpointerdown = e => { e.preventDefault(); drawDrawing = true; drawCtx.beginPath(); let r = canvas.getBoundingClientRect(); let x = e.clientX != null ? e.clientX : e.touches[0].clientX; let y = e.clientY != null ? e.clientY : e.touches[0].clientY; drawCtx.moveTo((x - r.left) * 2, (y - r.top) * 2); };
-  canvas.ontouchmove = canvas.onpointermove = e => { e.preventDefault(); if (!drawDrawing) return; let r = canvas.getBoundingClientRect(); let x = e.clientX != null ? e.clientX : e.touches[0].clientX; let y = e.clientY != null ? e.clientY : e.touches[0].clientY; drawCtx.lineTo((x - r.left) * 2, (y - r.top) * 2); drawCtx.stroke(); };
-  canvas.ontouchend = canvas.onpointerup = () => { drawDrawing = false; };
-  canvas.onpointerleave = () => { drawDrawing = false; };
+  drawCtx.lineCap = 'round';
+  drawCtx.lineJoin = 'round';
+
+  if (mode === 'trace') {
+    drawCtx.clearRect(0, 0, 560, 560);
+    drawCtx.fillStyle = '#e0e0e0';
+    drawCtx.font = '280px "KaiTi","STKaiti","SimSun",serif';
+    drawCtx.textAlign = 'center';
+    drawCtx.textBaseline = 'middle';
+    drawCtx.fillText(currentChar, 280, 280);
+    drawCtx.strokeStyle = '#e24b4a';
+    drawCtx.lineWidth = 10;
+  } else {
+    drawCtx.fillStyle = '#f5f7fa';
+    drawCtx.fillRect(0, 0, 560, 560);
+    drawCtx.strokeStyle = '#333';
+    drawCtx.lineWidth = 8;
+  }
+  bindCanvasEvents(canvas);
+
+  // 滚动到可见位置
+  setTimeout(function() { canvas.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 150);
 }
+
+function startTraceQuiz() { setupCanvas('trace'); }
+function startFreeDraw() { setupCanvas('free'); }
 
 function resetCanvas() {
   if (!drawCtx) return;
   drawCtx.clearRect(0, 0, 560, 560);
   if (drawMode === 'trace' && currentChar) {
     drawCtx.fillStyle = '#e0e0e0';
-    drawCtx.font = '280px "Noto Serif CJK SC","Source Han Serif SC","SimSun",serif';
-    drawCtx.textAlign = 'center'; drawCtx.textBaseline = 'middle';
+    drawCtx.font = '280px "KaiTi","STKaiti","SimSun",serif';
+    drawCtx.textAlign = 'center';
+    drawCtx.textBaseline = 'middle';
     drawCtx.fillText(currentChar, 280, 280);
-    drawCtx.strokeStyle = '#e24b4a'; drawCtx.lineWidth = 10;
+    drawCtx.strokeStyle = '#e24b4a';
+    drawCtx.lineWidth = 10;
   } else {
-    drawCtx.fillStyle = '#f5f7fa'; drawCtx.fillRect(0, 0, 560, 560);
-    drawCtx.strokeStyle = '#333'; drawCtx.lineWidth = 8;
+    drawCtx.fillStyle = '#f5f7fa';
+    drawCtx.fillRect(0, 0, 560, 560);
+    drawCtx.strokeStyle = '#333';
+    drawCtx.lineWidth = 8;
   }
-  drawCtx.lineCap = 'round'; drawCtx.lineJoin = 'round';
+  drawCtx.lineCap = 'round';
+  drawCtx.lineJoin = 'round';
 }
 
 let speechReady = false;
@@ -746,7 +810,8 @@ function playWord(word) {
 function closeCharModal() {
   document.getElementById('free-draw-canvas').style.display = 'none';
   document.getElementById('btn-clear-canvas').style.display = 'none';
-  drawCtx = null; drawDrawing = false; drawMode = null;
+  drawCtx = null; drawDrawing = false; drawMode = null; canvasVisible = false;
+  if (canvasAbort) { canvasAbort.abort(); canvasAbort = null; }
   document.getElementById('char-modal').style.display = 'none';
   hanziWriter = null;
   currentCharData = null;

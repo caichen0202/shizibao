@@ -2732,15 +2732,6 @@ addChars(5,'下',22,'课文22 手指',[
 
 // 课文23 童年的发现（略读课文，无会写字）
 
-addChars(grade, vol, unit, unitName, chars) {
-  chars.forEach(function(c) {
-    ALL_CHARS.push({c:c[0],p:c[1],g:grade,v:vol,u:unit,n:unitName,w:c[2]||[c[0]],s:c[3]||''});
-  });
-}
-
-function getAllChars() { return ALL_CHARS; }
-module.exports = { addChars, getAllChars };
-
 // ===== 六年级上册 =====
 
 addChars(6,'上',1,'课文1 草原',[
