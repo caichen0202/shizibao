@@ -778,33 +778,46 @@ function initSpeech() {
 function speakChar() {
   if (!currentCharData) return;
   let char = currentCharData.c;
-  // 方案一：系统语音引擎（即时）
   try {
     speechSynthesis.cancel();
     let u = new SpeechSynthesisUtterance(char);
-    u.lang = 'zh-CN'; u.rate = 0.5; u.pitch = 1.1; u.volume = 1;
+    u.lang = 'zh-CN'; u.rate = 0.3; u.pitch = 1.0; u.volume = 1;
     let zh = speechSynthesis.getVoices().find(v => v.lang.startsWith('zh'));
     if (zh) u.voice = zh;
     let fired = false;
     u.onstart = () => { fired = true; };
-    u.onerror = () => { if (!fired) { fired = true; playBaiduTTS(char); } };
+    u.onerror = () => { if (!fired) { fired = true; playTTSFallback(char); } };
     speechSynthesis.speak(u);
-    setTimeout(() => { if (!fired) { fired = true; playBaiduTTS(char); } }, 800);
+    setTimeout(() => { if (!fired) { fired = true; playTTSFallback(char); } }, 1000);
     return;
-  } catch(e) { playBaiduTTS(char); }
+  } catch(e) { playTTSFallback(char); }
 }
 
-function playBaiduTTS(char) {
+function playTTSFallback(text) {
   let a = document.getElementById('tts-audio');
-  // 尝试有道 TTS（小米浏览器对百度域名的拦截较少）
-  a.src = 'https://dict.youdao.com/dictvoice?audio=' + encodeURIComponent(char) + '&le=zh';
-  a.load();
-  let p = a.play();
-  if (p) p.catch(() => {});
+  // 优先用有道 TTS，短字重复两遍让小孩听清
+  let repeat = text.length === 1 ? 2 : 1;
+  let urls = [];
+  for (let i = 0; i < repeat; i++) {
+    urls.push('https://dict.youdao.com/dictvoice?audio=' + encodeURIComponent(text) + '&le=zh');
+  }
+  playAudioSequence(a, urls, 0);
+}
+
+function playAudioSequence(audio, urls, idx) {
+  if (idx >= urls.length) return;
+  audio.src = urls[idx];
+  audio.load();
+  let p = audio.play();
+  if (p) {
+    p.then(() => {}).catch(() => {});
+  }
+  audio.onended = function() { playAudioSequence(audio, urls, idx + 1); };
+  audio.onerror = function() { playAudioSequence(audio, urls, idx + 1); };
 }
 
 function playWord(word) {
-  playBaiduTTS(word);
+  playTTSFallback(word);
 }
 
 function closeCharModal() {
