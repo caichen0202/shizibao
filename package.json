@@ -1,0 +1,17 @@
+{
+  "name": "shizibao",
+  "version": "1.0.0",
+  "description": "识字宝 - 小学生汉字学习",
+  "main": "www/index.html",
+  "scripts": {
+    "build": "echo 'Static files, no build step'",
+    "sync": "npx cap sync android"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@capacitor/android": "^8.4.1",
+    "@capacitor/cli": "^7.6.7",
+    "@capacitor/core": "^8.4.1"
+  }
+}

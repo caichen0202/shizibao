@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="识字宝">
+<meta name="theme-color" content="#4A90D9">
+<meta name="description" content="小学生识字宝 - 百词斩方法学汉字">
+<title>识字宝</title>
+<link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIuiuhOWtl+WunSIsCiAgInNob3J0X25hbWUiOiAi6K+G5a2X5a6dIiwKICAic3RhcnRfdXJsIjogIi4iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiNmNWY3ZmEiLAogICJ0aGVtZV9jb2xvciI6ICIjNEE5MEQ5IiwKICAiaWNvbnMiOiBbXQp9">
+<style>
+:root{--bg:#f5f7fa;--card:#fff;--primary:#4A90D9;--primary-light:#e8f0fb;--success:#52c41a;--success-light:#f0fbe8;--danger:#e24b4a;--danger-light:#fcebeb;--warning:#ef9f27;--warning-light:#feefd8;--text:#1a1a1a;--text2:#666;--text3:#999;--border:#e8e8e8;--radius:12px;--radius-sm:8px;--shadow:0 2px 12px rgba(0,0,0,.06)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased;min-height:100vh;min-height:100dvh;padding-bottom:72px;user-select:none}
+.page{display:none;padding:16px;animation:fadeIn .25s ease}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.tab-bar{position:fixed;bottom:0;left:0;right:0;height:64px;background:var(--card);border-top:1px solid var(--border);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom)}
+.tab-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;transition:all .2s;color:var(--text3);font-size:10px;border:none;background:none}
+.tab-item.active{color:var(--primary)}
+.tab-item svg{width:24px;height:24px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:12px 24px;border-radius:var(--radius-sm);font-size:15px;font-weight:500;cursor:pointer;border:none;transition:all .15s}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:active{background:#3a7bc8}
+.btn-outline{background:var(--card);color:var(--primary);border:1.5px solid var(--primary)}
+.btn-outline:active{background:var(--primary-light)}
+.btn-lg{width:100%;padding:14px 24px;font-size:16px}
+.card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+.char-display{font-size:72px;text-align:center;padding:24px 0;font-family:"Noto Serif CJK SC","Source Han Serif SC","STKaiti","KaiTi","SimSun",serif;font-weight:700}
+.char-display.small{font-size:48px}
+.pinyin-display{text-align:center;font-size:22px;color:var(--primary);margin-bottom:8px;letter-spacing:2px}
+.words-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:12px 0}
+.word-tag{background:var(--primary-light);color:var(--primary);padding:6px 14px;border-radius:20px;font-size:14px}
+.quiz-option{font-family:"Noto Serif CJK SC","Source Han Serif SC","STKaiti","KaiTi","SimSun",serif}
+.char-grid-item{font-family:"Noto Serif CJK SC","Source Han Serif SC","STKaiti","KaiTi","SimSun",serif}
+.sentence-box{text-align:center;color:var(--text2);font-size:15px;padding:10px;background:var(--bg);border-radius:var(--radius-sm);line-height:1.6}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.stat-card{text-align:center;padding:16px 8px}
+.stat-card .num{font-size:32px;font-weight:700;color:var(--primary)}
+.stat-card .label{font-size:12px;color:var(--text3);margin-top:4px}
+.unit-list{display:flex;flex-direction:column;gap:10px}
+.unit-item{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);cursor:pointer}
+.unit-item:active{background:var(--primary-light)}
+.unit-info h4{font-size:15px;margin-bottom:4px}
+.unit-info p{font-size:12px;color:var(--text3)}
+.unit-badge{padding:4px 10px;border-radius:12px;font-size:11px;font-weight:500}
+.unit-badge.mastered{background:var(--success-light);color:var(--success)}
+.unit-badge.learning{background:var(--warning-light);color:var(--warning)}
+.unit-badge.locked{background:var(--bg);color:var(--text3)}
+.grade-selector{display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;padding-bottom:8px;-webkit-overflow-scrolling:touch}
+.grade-btn{flex-shrink:0;padding:8px 16px;border-radius:20px;font-size:13px;cursor:pointer;border:1.5px solid var(--border);background:var(--card);color:var(--text2);white-space:nowrap}
+.grade-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.quiz-options{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}
+.quiz-option{padding:18px 12px;border-radius:var(--radius);border:2px solid var(--border);background:var(--card);font-size:28px;text-align:center;cursor:pointer;transition:all .2s;font-family:"KaiTi","STKaiti","楷体",serif;min-height:72px;display:flex;align-items:center;justify-content:center}
+.quiz-option:active{transform:scale(.96)}
+.quiz-option.correct{background:var(--success-light);border-color:var(--success);color:var(--success)}
+.quiz-option.wrong{background:var(--danger-light);border-color:var(--danger);color:var(--danger);animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.quiz-progress{display:flex;gap:4px;justify-content:center;margin:12px 0}
+.progress-dot{width:10px;height:10px;border-radius:50%;background:var(--border);transition:all .2s}
+.progress-dot.done{background:var(--success)}
+.progress-dot.current{background:var(--primary);transform:scale(1.3)}
+.progress-dot.wrong-dot{background:var(--danger)}
+.review-queue{text-align:center;padding:32px 16px}
+.review-queue .big-num{font-size:64px;font-weight:700;color:var(--primary);line-height:1}
+.review-queue .hint{font-size:15px;color:var(--text2);margin-top:8px}
+.achievement-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+.achievement-item{text-align:center;padding:16px 8px;background:var(--bg);border-radius:var(--radius-sm)}
+.achievement-item.earned{background:var(--primary-light)}
+.achievement-item .icon{font-size:32px;margin-bottom:6px}
+.achievement-item .name{font-size:11px;color:var(--text2)}
+.achievement-item.locked{opacity:.4}
+.char-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:12px}
+.char-grid-item{padding:10px 4px;text-align:center;font-size:24px;background:var(--card);border-radius:var(--radius-sm);font-family:"KaiTi","STKaiti","楷体",serif;cursor:pointer}
+.char-grid-item:active{background:var(--primary-light)}
+.char-grid-item.mastered{border:2px solid var(--success)}
+.char-grid-item.reviewing{border:2px solid var(--warning)}
+.char-grid-item.new{border:2px solid var(--border)}
+.hanzi-stage{width:100%;max-width:280px;margin:0 auto 16px;border-radius:var(--radius);overflow:hidden;background:var(--card);aspect-ratio:1;position:relative}
+.swipe-hint{text-align:center;color:var(--text3);font-size:12px;margin-top:8px;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:.4}50%{opacity:1}}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:flex-end;justify-content:center;animation:fadeIn .2s}
+.modal-sheet{background:var(--card);border-radius:16px 16px 0 0;width:100%;max-width:500px;padding:20px;max-height:70vh;overflow-y:auto;padding-bottom:env(safe-area-inset-bottom,20px)}
+.modal-title{font-size:17px;font-weight:600;text-align:center;margin-bottom:16px}
+.quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.quick-action{display:flex;flex-direction:column;align-items:center;gap:8px;padding:20px 12px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);cursor:pointer;border:none;text-align:center}
+.quick-action:active{background:var(--primary-light)}
+.quick-action .icon{font-size:36px}
+.quick-action .label{font-size:14px;font-weight:500}
+.quick-action .sub{font-size:11px;color:var(--text3)}
+.mode-selector{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.mode-btn{flex:1;min-width:80px;padding:10px;border-radius:var(--radius-sm);font-size:12px;cursor:pointer;border:1.5px solid var(--border);background:var(--card);color:var(--text2);white-space:nowrap;text-align:center}
+.mode-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.streak-flame{display:inline-block;animation:flame .6s ease-in-out infinite alternate}
+@keyframes flame{from{transform:scale(1)}to{transform:scale(1.15)}}
+@media(display-mode:standalone){body{padding-top:env(safe-area-inset-top)}}
+</style>
+</head>
+<body>
+
+<!-- Tab Bar -->
+<nav class="tab-bar">
+<button class="tab-item active" data-page="home" onclick="switchPage('home')">
+<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+首页
+</button>
+<button class="tab-item" data-page="learn" onclick="switchPage('learn')">
+<svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3 1 9l11 6 9-4.91V17h2V9L12 3z"/></svg>
+学习
+</button>
+<button class="tab-item" data-page="practice" onclick="switchPage('practice')">
+<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+练习
+</button>
+<button class="tab-item" data-page="review" onclick="switchPage('review')">
+<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+复习
+</button>
+<button class="tab-item" data-page="me" onclick="switchPage('me')">
+<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+我的
+</button>
+</nav>
+
+<!-- HOME PAGE -->
+<div class="page active" id="page-home">
+<div class="card" style="margin-bottom:16px">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+<div>
+<h2 style="font-size:18px">识字宝</h2>
+<p style="font-size:13px;color:var(--text3)">部编版小学语文 · 百词斩方法学汉字</p>
+</div>
+<div style="text-align:center">
+<div class="num" style="font-size:36px;line-height:1" id="streak-num">0</div>
+<div style="font-size:11px;color:var(--warning)"><span class="streak-flame">🔥</span> 连续天数</div>
+</div>
+</div>
+</div>
+
+<div class="stats-grid" style="margin-bottom:16px">
+<div class="card stat-card">
+<div class="num" id="stat-learned">0</div>
+<div class="label">已学汉字</div>
+</div>
+<div class="card stat-card">
+<div class="num" id="stat-review-today">0</div>
+<div class="label">待复习</div>
+</div>
+</div>
+
+<div class="quick-actions">
+<button class="quick-action" onclick="switchPage('learn')">
+<span class="icon">📖</span>
+<span class="label">学新字</span>
+<span class="sub">按单元学习</span>
+</button>
+<button class="quick-action" onclick="switchPage('review')">
+<span class="icon">🔄</span>
+<span class="label">去复习</span>
+<span class="sub" id="review-sub-text">间隔重复记忆</span>
+</button>
+<button class="quick-action" onclick="startPractice()">
+<span class="icon">✍️</span>
+<span class="label">练一练</span>
+<span class="sub">随机练习测试</span>
+</button>
+<button class="quick-action" onclick="switchPage('me')">
+<span class="icon">🏆</span>
+<span class="label">看成就</span>
+<span class="sub">学习统计</span>
+</button>
+</div>
+</div>
+
+<!-- LEARN PAGE -->
+<div class="page" id="page-learn">
+<div class="grade-selector" id="grade-selector"></div>
+<div class="mode-selector" id="vol-selector"></div>
+<div class="unit-list" id="unit-list"></div>
+</div>
+
+<!-- PRACTICE PAGE -->
+<div class="page" id="page-practice">
+<div id="quiz-area">
+<p style="text-align:center;color:var(--text3);margin-bottom:16px">选择一个单元开始练习</p>
+<button class="btn btn-primary btn-lg" onclick="startPractice()">随机练习（全部已学）</button>
+</div>
+</div>
+
+<!-- REVIEW PAGE -->
+<div class="page" id="page-review">
+<div id="review-content">
+<div class="review-queue">
+<div class="big-num" id="review-count">0</div>
+<div class="hint">个汉字需要复习</div>
+</div>
+<button class="btn btn-primary btn-lg" onclick="startReview()" id="btn-start-review" style="margin-top:16px">开始复习</button>
+</div>
+</div>
+
+<!-- ME PAGE -->
+<div class="page" id="page-me">
+<div class="card" style="margin-bottom:16px">
+<h3 style="font-size:16px;margin-bottom:12px">学习统计</h3>
+<div class="stats-grid">
+<div class="stat-card" style="background:var(--bg);border-radius:var(--radius-sm);padding:12px">
+<div class="num" style="font-size:24px" id="me-learned">0</div>
+<div class="label">已学汉字</div>
+</div>
+<div class="stat-card" style="background:var(--bg);border-radius:var(--radius-sm);padding:12px">
+<div class="num" style="font-size:24px" id="me-mastered">0</div>
+<div class="label">已掌握</div>
+</div>
+<div class="stat-card" style="background:var(--bg);border-radius:var(--radius-sm);padding:12px">
+<div class="num" style="font-size:24px" id="me-streak">0</div>
+<div class="label">连续天数</div>
+</div>
+<div class="stat-card" style="background:var(--bg);border-radius:var(--radius-sm);padding:12px">
+<div class="num" style="font-size:24px" id="me-total-practice">0</div>
+<div class="label">练习次数</div>
+</div>
+</div>
+</div>
+<div class="card">
+<h3 style="font-size:16px;margin-bottom:12px">成就徽章</h3>
+<div class="achievement-grid" id="achievement-grid"></div>
+</div>
+<div style="margin-top:16px;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;gap:10px">
+<button class="btn btn-outline" style="flex:1" onclick="exportData()">📤 导出进度</button>
+<button class="btn btn-outline" style="flex:1" onclick="document.getElementById('import-file').click()">📥 导入进度</button>
+</div>
+<button class="btn btn-outline" onclick="resetAll()" style="color:var(--danger);border-color:var(--danger)">⚠️ 重置全部数据</button>
+<input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+</div>
+</div>
+
+<!-- Character Detail Modal -->
+<div class="modal-overlay" id="char-modal" style="display:none" onclick="if(event.target===this)closeCharModal()">
+<div class="modal-sheet">
+<div style="text-align:right;margin-bottom:8px">
+<button onclick="closeCharModal()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text3)">✕</button>
+</div>
+<div id="modal-char" class="char-display"></div>
+<div class="hanzi-stage" id="hanzi-writer-container" onclick="animateCurrentChar()"></div>
+<div class="swipe-hint">👆 点击上方方框播放笔顺 | 左滑下一个字</div>
+<div class="pinyin-display" id="modal-pinyin"></div>
+<div class="words-row" id="modal-words"></div>
+<div class="sentence-box" id="modal-sentence"></div>
+<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+<button class="btn btn-primary" style="flex:1;min-width:70px" onclick="speakChar()">🔊 朗读</button>
+<button class="btn btn-outline" style="flex:1;min-width:70px" onclick="animateCurrentChar()">✏️ 笔顺</button>
+<button class="btn btn-outline" style="flex:1;min-width:70px" onclick="startTraceQuiz()">🖊 描红</button>
+<button class="btn btn-outline" style="flex:1;min-width:70px" onclick="startFreeDraw()">📝 书写</button>
+</div>
+<canvas id="free-draw-canvas" style="display:none;width:100%;max-width:280px;height:280px;margin:12px auto;border-radius:var(--radius);background:var(--card);border:2px dashed var(--border);touch-action:none" width="560" height="560"></canvas>
+<div style="text-align:center;margin-top:6px">
+<button id="btn-clear-canvas" class="btn btn-outline" style="display:none;font-size:12px;padding:6px 14px" onclick="resetCanvas()">🗑 清除</button>
+</div>
+</div>
+</div>
+
+<!-- Result Modal -->
+<div class="modal-overlay" id="result-modal" style="display:none" onclick="if(event.target===this)closeResultModal()">
+<div class="modal-sheet">
+<div class="modal-title" id="result-title"></div>
+<div style="text-align:center;font-size:48px;margin:16px 0" id="result-emoji"></div>
+<div id="result-detail" style="text-align:center;margin-bottom:16px"></div>
+<button class="btn btn-primary btn-lg" onclick="closeResultModal()">知道了</button>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
+<script src="chars.js"></script>
+<script>
+// ==================== 应用状态 ====================
+const STORAGE_KEY = 'shizibao_data';
+let appData = loadData();
+let currentGrade = 1;
+let currentVol = '上';
+let currentPage = 'home';
+let quizChars = [];
+let quizIndex = 0;
+let quizResults = [];
+let currentCharData = null;
+let hanziWriter = null;
+let currentChar = null;
+let learnModeUnits = [];
+
+function defaultData() {
+  return {
+    chars: {},        // char -> {state,correct,wrong,lastReview,nextReview,interval,ease}
+    streak: 0,
+    lastStudyDate: '',
+    totalPractice: 0,
+    achievements: {}
+  };
+}
+
+function deepMerge(target, source) {
+  let out = {};
+  for (let k of Object.keys(target)) { out[k] = target[k]; }
+  for (let k of Object.keys(source)) {
+    if (source[k] && typeof source[k] === 'object' && !Array.isArray(source[k]) && target[k] && typeof target[k] === 'object') {
+      out[k] = deepMerge(target[k], source[k]);
+    } else {
+      out[k] = source[k];
+    }
+  }
+  return out;
+}
+
+function loadData() {
+  try {
+    let d = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (!d || !d.chars) return defaultData();
+    // 迁移旧复合键 → 新纯字键
+    let migrated = {};
+    let needMigrate = false;
+    for (let k of Object.keys(d.chars)) {
+      if (k.includes('_')) {
+        needMigrate = true;
+        let parts = k.split('_');
+        let newKey = parts[parts.length - 1];
+        if (!migrated[newKey]) migrated[newKey] = d.chars[k];
+        else {
+          let old = migrated[newKey], cur = d.chars[k];
+          migrated[newKey] = {
+            state: old.state === 'mastered' || cur.state === 'mastered' ? 'mastered' : (old.state === 'reviewing' || cur.state === 'reviewing' ? 'reviewing' : 'new'),
+            correct: (old.correct || 0) + (cur.correct || 0),
+            wrong: (old.wrong || 0) + (cur.wrong || 0),
+            lastReview: [old.lastReview, cur.lastReview].filter(Boolean).sort().pop() || null,
+            nextReview: [old.nextReview, cur.nextReview].filter(Boolean).sort()[0] || todayStr(),
+            interval: Math.max(old.interval || 0, cur.interval || 0),
+            ease: Math.max(old.ease || 2.5, cur.ease || 2.5)
+          };
+        }
+      } else {
+        migrated[k] = d.chars[k];
+      }
+    }
+    if (needMigrate) { d.chars = migrated; }
+    return deepMerge(defaultData(), d);
+  } catch(e) { return defaultData(); }
+}
+
+function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(appData)); }
+
+function charKey(c) { return c.c; }
+
+function getCharState(ch) {
+  let k = charKey(ch);
+  if (!appData.chars[k]) {
+    appData.chars[k] = {state:'new', correct:0, wrong:0, lastReview:null, nextReview:todayStr(), interval:0, ease:2.5};
+  }
+  return appData.chars[k];
+}
+
+function todayStr() { return new Date().toISOString().slice(0,10); }
+
+// ==================== SRS 算法 ====================
+function srsUpdate(ch, correct) {
+  let k = charKey(ch);
+  let s = getCharState(ch);
+  let today = todayStr();
+  let sameDay = s.lastReview === today;
+  s.lastReview = today;
+  if (correct) {
+    s.correct++;
+    if (!sameDay) {
+      if (s.state === 'new' || s.interval === 0) s.interval = 1;
+      else s.interval = Math.round(s.interval * s.ease);
+      s.ease = Math.min(3, s.ease + 0.1);
+    }
+    s.state = s.interval >= 30 ? 'mastered' : 'reviewing';
+  } else {
+    s.wrong++;
+    if (!sameDay) {
+      s.interval = 1;
+      s.ease = Math.max(1.3, s.ease - 0.2);
+    }
+    s.state = 'reviewing';
+  }
+  let d = new Date();
+  d.setDate(d.getDate() + s.interval);
+  s.nextReview = d.toISOString().slice(0,10);
+  saveData();
+}
+
+function getReviewQueue() {
+  let today = todayStr();
+  return ALL_CHARS.filter(ch => {
+    let s = appData.chars[charKey(ch)];
+    return s && s.state !== 'new' && s.nextReview <= today;
+  });
+}
+
+function getLearned() {
+  return ALL_CHARS.filter(ch => {
+    let s = appData.chars[charKey(ch)];
+    return s && s.state !== 'new';
+  });
+}
+
+// ==================== 打卡 ====================
+function checkStreak() {
+  let today = todayStr();
+  let yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
+  let ys = yesterday.toISOString().slice(0,10);
+  if (appData.lastStudyDate === today) return;
+  if (appData.lastStudyDate === ys) appData.streak++;
+  else appData.streak = 1;
+  appData.lastStudyDate = today;
+  saveData();
+}
+
+// ==================== 成就 ====================
+const ACHIEVEMENTS = [
+  {id:'a1',name:'初识10字',icon:'🌟',check:()=>getLearned().length>=10},
+  {id:'a2',name:'认识50字',icon:'⭐',check:()=>getLearned().length>=50},
+  {id:'a3',name:'百字达人',icon:'💎',check:()=>getLearned().length>=100},
+  {id:'a4',name:'连击3天',icon:'🔥',check:()=>appData.streak>=3},
+  {id:'a5',name:'连击7天',icon:'🏆',check:()=>appData.streak>=7},
+  {id:'a6',name:'练习10次',icon:'📝',check:()=>appData.totalPractice>=10},
+];
+
+function checkAchievements() {
+  ACHIEVEMENTS.forEach(a => {
+    if (a.check() && !appData.achievements[a.id]) appData.achievements[a.id] = todayStr();
+  });
+  saveData();
+}
+
+// ==================== 页面切换 ====================
+function switchPage(page) {
+  currentPage = page;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+  let pg = document.getElementById('page-'+page);
+  if (pg) pg.classList.add('active');
+  let tb = document.querySelector(`.tab-item[data-page="${page}"]`);
+  if (tb) tb.classList.add('active');
+  renderPage(page);
+}
+
+function renderPage(page) {
+  if (page==='home') renderHome();
+  else if (page==='learn') renderLearn();
+  else if (page==='review') renderReview();
+  else if (page==='me') renderMe();
+}
+
+// ==================== 首页 ====================
+function renderHome() {
+  let learned = getLearned().length;
+  let review = getReviewQueue().length;
+  document.getElementById('stat-learned').textContent = learned;
+  document.getElementById('stat-review-today').textContent = review;
+  document.getElementById('streak-num').textContent = appData.streak;
+  document.getElementById('review-sub-text').textContent = review > 0 ? `今天${review}字待复习` : '暂无需复习';
+}
+
+// ==================== 学习页 ====================
+function renderLearn() {
+  let grades = [...new Set(ALL_CHARS.map(c=>c.g))].sort();
+  let sel = document.getElementById('grade-selector');
+  sel.innerHTML = grades.map(g =>
+    `<button class="grade-btn${g===currentGrade?' active':''}" onclick="selectGrade(${g})">${g}年级</button>`
+  ).join('');
+  let vols = ['上','下'];
+  let vsel = document.getElementById('vol-selector');
+  vsel.innerHTML = vols.map(v =>
+    `<button class="mode-btn${v===currentVol?' active':''}" onclick="selectVol('${v}')">${v}册</button>`
+  ).join('');
+  renderUnits();
+}
+
+function selectGrade(g) {
+  currentGrade = g;
+  renderLearn();
+}
+
+function selectVol(v) {
+  currentVol = v;
+  renderLearn();
+}
+
+function renderUnits() {
+  let units = {};
+  ALL_CHARS.filter(c => c.g===currentGrade && c.v===currentVol).forEach(c => {
+    let uk = `${c.u}_${c.n}`;
+    if (!units[uk]) units[uk] = {u:c.u, n:c.n, chars:[], learned:0, mastered:0, total:0};
+    units[uk].total++;
+    units[uk].chars.push(c);
+    let s = getCharState(c);
+    if (s.state !== 'new') units[uk].learned++;
+    if (s.state === 'mastered') units[uk].mastered++;
+  });
+  learnModeUnits = Object.values(units).sort((a,b)=>a.u-b.u);
+  let html = learnModeUnits.map(u => {
+    let badge = u.learned === 0 ? '<span class="unit-badge locked">未开始</span>'
+      : u.mastered >= u.total * 0.8 ? '<span class="unit-badge mastered">已掌握</span>'
+      : '<span class="unit-badge learning">学习中</span>';
+    return `<div class="unit-item" onclick="openUnit(${u.u})">
+<div class="unit-info"><h4>${u.n}</h4><p>${u.total}个字 · 已学${u.learned} · 掌握${u.mastered}</p></div>
+${badge}
+</div>`;
+  }).join('');
+  document.getElementById('unit-list').innerHTML = html;
+
+  // char grid
+  let uu = learnModeUnits.map(u => {
+    let charsHtml = u.chars.map(c => {
+      let s = getCharState(c);
+      let cls = s.state==='mastered'?'mastered':(s.state==='reviewing'?'reviewing':'new');
+      return `<div class="char-grid-item ${cls}" onclick="openChar('${c.c}',${c.g},'${c.v}',${c.u})">${c.c}</div>`;
+    }).join('');
+    return `<div style="margin-top:16px"><h4 style="font-size:14px;margin-bottom:8px;color:var(--text2)">${u.n}</h4><div class="char-grid">${charsHtml}</div></div>`;
+  }).join('');
+  document.getElementById('unit-list').insertAdjacentHTML('beforeend', uu);
+}
+
+function openUnit(uNum) {
+  let chars = ALL_CHARS.filter(c => c.g===currentGrade && c.v===currentVol && c.u===uNum);
+  learnModeUnits = chars;
+  startLearnMode(chars);
+}
+
+function startLearnMode(chars) {
+  if (chars.length === 0) return;
+  let modal = document.getElementById('char-modal');
+  modal.style.display = 'flex';
+  learnModeUnits = chars;
+  showLearnChar(0);
+}
+
+function showLearnChar(idx) {
+  if (idx < 0) idx = 0;
+  if (idx >= learnModeUnits.length) {
+    closeCharModal();
+    checkStreak();
+    checkAchievements();
+    switchPage('home');
+    return;
+  }
+  let ch = learnModeUnits[idx];
+  currentCharData = ch;
+  currentChar = ch.c;
+  document.getElementById('modal-char').textContent = ch.c;
+  document.getElementById('modal-pinyin').textContent = ch.p;
+  document.getElementById('modal-words').innerHTML = ch.w.map(w => `<span class="word-tag" onclick="playWord('${w}')" style="cursor:pointer">🔊 ${w}</span>`).join('');
+  document.getElementById('modal-sentence').textContent = ch.s || '';
+  document.getElementById('hanzi-writer-container').innerHTML = '';
+
+  // Mark as started
+  let s = getCharState(ch);
+  if (s.state === 'new') s.state = 'reviewing';
+
+  // Hanzi Writer
+  setTimeout(() => {
+    try {
+      hanziWriter = HanziWriter.create('hanzi-writer-container', ch.c, {
+        width: 280, height: 280, padding: 5,
+        showOutline: true, strokeAnimationSpeed: 1,
+        delayBetweenStrokes: 100,
+        strokeColor: '#333', outlineColor: '#ddd',
+        radicalColor: null
+      });
+    } catch(e) {}
+  }, 100);
+
+  // Swipe: 用 named function + addEventListener，避免闭包冲突
+  let overlay = document.getElementById('char-modal');
+  window.__swipeIdx = idx;
+  overlay.removeEventListener('touchstart', _swipeStart);
+  overlay.removeEventListener('touchend', _swipeEnd);
+  overlay.addEventListener('touchstart', _swipeStart, {passive:true});
+  overlay.addEventListener('touchend', _swipeEnd, {passive:true});
+}
+
+function _swipeStart(e) { window.__swipeX = e.touches[0].clientX; }
+function _swipeEnd(e) {
+  let t = e.target;
+  if (t && (t.tagName === 'BUTTON' || t.tagName === 'CANVAS' || t.closest('button'))) return;
+  let dx = e.changedTouches[0].clientX - (window.__swipeX || 0);
+  if (Math.abs(dx) > 50) {
+    let idx = window.__swipeIdx || 0;
+    if (dx < -30) showLearnChar(idx + 1);
+    else if (dx > 30) showLearnChar(idx - 1);
+  }
+}
+
+function animateCurrentChar() {
+  if (hanziWriter) hanziWriter.animateCharacter();
+}
+
+function startTraceQuiz() {
+  if (!currentChar) return;
+  let canvas = document.getElementById('free-draw-canvas');
+  let btn = document.getElementById('btn-clear-canvas');
+  if (canvas.style.display !== 'none') {
+    canvas.style.display = 'none'; btn.style.display = 'none'; return;
+  }
+  canvas.style.display = 'block'; btn.style.display = 'inline-flex';
+  drawCtx = canvas.getContext('2d');
+  drawMode = 'trace';
+  drawCtx.clearRect(0, 0, 560, 560);
+  drawCtx.fillStyle = '#e0e0e0';
+  drawCtx.font = '280px "Noto Serif CJK SC","Source Han Serif SC","SimSun",serif';
+  drawCtx.textAlign = 'center'; drawCtx.textBaseline = 'middle';
+  drawCtx.fillText(currentChar, 280, 280);
+  drawCtx.strokeStyle = '#e24b4a'; drawCtx.lineWidth = 10;
+  drawCtx.lineCap = 'round'; drawCtx.lineJoin = 'round';
+  canvas.ontouchstart = canvas.onpointerdown = e => { e.preventDefault(); drawDrawing = true; drawCtx.beginPath(); let r = canvas.getBoundingClientRect(); let x = e.clientX != null ? e.clientX : e.touches[0].clientX; let y = e.clientY != null ? e.clientY : e.touches[0].clientY; drawCtx.moveTo((x - r.left) * 2, (y - r.top) * 2); };
+  canvas.ontouchmove = canvas.onpointermove = e => { e.preventDefault(); if (!drawDrawing) return; let r = canvas.getBoundingClientRect(); let x = e.clientX != null ? e.clientX : e.touches[0].clientX; let y = e.clientY != null ? e.clientY : e.touches[0].clientY; drawCtx.lineTo((x - r.left) * 2, (y - r.top) * 2); drawCtx.stroke(); };
+  canvas.ontouchend = canvas.onpointerup = () => { drawDrawing = false; };
+  canvas.onpointerleave = () => { drawDrawing = false; };
+}
+
+let drawCtx = null, drawDrawing = false, drawMode = null; // 'trace' | 'free'
+function startFreeDraw() {
+  let canvas = document.getElementById('free-draw-canvas');
+  let btn = document.getElementById('btn-clear-canvas');
+  if (canvas.style.display !== 'none') {
+    canvas.style.display = 'none'; btn.style.display = 'none'; return;
+  }
+  canvas.style.display = 'block'; btn.style.display = 'inline-flex';
+  drawCtx = canvas.getContext('2d');
+  drawMode = 'free';
+  drawCtx.fillStyle = '#f5f7fa'; drawCtx.fillRect(0, 0, 560, 560);
+  drawCtx.strokeStyle = '#333'; drawCtx.lineWidth = 8;
+  drawCtx.lineCap = 'round'; drawCtx.lineJoin = 'round';
+  canvas.ontouchstart = canvas.onpointerdown = e => { e.preventDefault(); drawDrawing = true; drawCtx.beginPath(); let r = canvas.getBoundingClientRect(); let x = e.clientX != null ? e.clientX : e.touches[0].clientX; let y = e.clientY != null ? e.clientY : e.touches[0].clientY; drawCtx.moveTo((x - r.left) * 2, (y - r.top) * 2); };
+  canvas.ontouchmove = canvas.onpointermove = e => { e.preventDefault(); if (!drawDrawing) return; let r = canvas.getBoundingClientRect(); let x = e.clientX != null ? e.clientX : e.touches[0].clientX; let y = e.clientY != null ? e.clientY : e.touches[0].clientY; drawCtx.lineTo((x - r.left) * 2, (y - r.top) * 2); drawCtx.stroke(); };
+  canvas.ontouchend = canvas.onpointerup = () => { drawDrawing = false; };
+  canvas.onpointerleave = () => { drawDrawing = false; };
+}
+
+function resetCanvas() {
+  if (!drawCtx) return;
+  drawCtx.clearRect(0, 0, 560, 560);
+  if (drawMode === 'trace' && currentChar) {
+    drawCtx.fillStyle = '#e0e0e0';
+    drawCtx.font = '280px "Noto Serif CJK SC","Source Han Serif SC","SimSun",serif';
+    drawCtx.textAlign = 'center'; drawCtx.textBaseline = 'middle';
+    drawCtx.fillText(currentChar, 280, 280);
+    drawCtx.strokeStyle = '#e24b4a'; drawCtx.lineWidth = 10;
+  } else {
+    drawCtx.fillStyle = '#f5f7fa'; drawCtx.fillRect(0, 0, 560, 560);
+    drawCtx.strokeStyle = '#333'; drawCtx.lineWidth = 8;
+  }
+  drawCtx.lineCap = 'round'; drawCtx.lineJoin = 'round';
+}
+
+let speechReady = false;
+function initSpeech() {
+  if (typeof speechSynthesis === 'undefined') return;
+  speechSynthesis.onvoiceschanged = () => {
+    if (speechSynthesis.getVoices().some(v => v.lang.startsWith('zh'))) speechReady = true;
+  };
+  setTimeout(() => {
+    if (speechSynthesis.getVoices().some(v => v.lang.startsWith('zh'))) speechReady = true;
+  }, 500);
+}
+
+function speakChar() {
+  if (!currentCharData) return;
+  let char = currentCharData.c;
+  // 方案一：系统语音引擎（即时）
+  try {
+    speechSynthesis.cancel();
+    let u = new SpeechSynthesisUtterance(char);
+    u.lang = 'zh-CN'; u.rate = 0.5; u.pitch = 1.1; u.volume = 1;
+    let zh = speechSynthesis.getVoices().find(v => v.lang.startsWith('zh'));
+    if (zh) u.voice = zh;
+    let fired = false;
+    u.onstart = () => { fired = true; };
+    u.onerror = () => { if (!fired) { fired = true; playBaiduTTS(char); } };
+    speechSynthesis.speak(u);
+    setTimeout(() => { if (!fired) { fired = true; playBaiduTTS(char); } }, 800);
+    return;
+  } catch(e) { playBaiduTTS(char); }
+}
+
+function playBaiduTTS(char) {
+  let a = document.getElementById('tts-audio');
+  // 尝试有道 TTS（小米浏览器对百度域名的拦截较少）
+  a.src = 'https://dict.youdao.com/dictvoice?audio=' + encodeURIComponent(char) + '&le=zh';
+  a.load();
+  let p = a.play();
+  if (p) p.catch(() => {});
+}
+
+function playWord(word) {
+  playBaiduTTS(word);
+}
+
+function closeCharModal() {
+  document.getElementById('free-draw-canvas').style.display = 'none';
+  document.getElementById('btn-clear-canvas').style.display = 'none';
+  drawCtx = null; drawDrawing = false; drawMode = null;
+  document.getElementById('char-modal').style.display = 'none';
+  hanziWriter = null;
+  currentCharData = null;
+  currentChar = null;
+}
+
+function openChar(c, g, v, u) {
+  let ch = ALL_CHARS.find(x => x.c===c && x.g===g && x.v===v && x.u===u);
+  if (ch) {
+    learnModeUnits = [ch];
+    startLearnMode([ch]);
+  }
+}
+
+// ==================== 练习页 ====================
+function startPractice() {
+  let pool = getLearned();
+  if (pool.length < 4) pool = ALL_CHARS.slice(0, 20);
+  if (pool.length < 4) return alert('数据太少，请先学习一些字');
+  shuffle(pool);
+  quizChars = pool.slice(0, 10);
+  quizIndex = 0;
+  quizResults = [];
+  quizLocked = false;
+  appData.totalPractice++;
+  saveData();
+  renderQuiz();
+}
+
+function shuffle(arr) {
+  for (let i=arr.length-1;i>0;i--) { let j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]]; }
+  return arr;
+}
+
+function renderQuiz() {
+  if (quizIndex >= quizChars.length) { showResults(); return; }
+  let ch = quizChars[quizIndex];
+  let options = getOptions(ch);
+  let html = `
+<div style="text-align:center;margin-bottom:8px;font-size:13px;color:var(--text3)">第 ${quizIndex+1} / ${quizChars.length} 题</div>
+<div class="quiz-progress">${quizChars.map((_,i)=>{
+  let cls = i<quizIndex ? (quizResults[i]?'done':'wrong-dot') : (i===quizIndex?'current':'');
+  return `<div class="progress-dot ${cls}"></div>`;
+}).join('')}</div>
+<div class="pinyin-display" style="font-size:28px;margin-top:12px">${ch.p}</div>
+<div class="quiz-options">
+${options.map((o,i) => `<div class="quiz-option" id="opt-${i}" onclick="answerQuiz('${o.c}',${i})">${o.c}</div>`).join('')}
+</div>
+`;
+  document.getElementById('quiz-area').innerHTML = html;
+  document.getElementById('page-practice').classList.add('active');
+}
+
+function getOptions(correct) {
+  let others = ALL_CHARS.filter(x => x.c !== correct.c);
+  shuffle(others);
+  let options = [correct, ...others.slice(0,3)];
+  return shuffle(options);
+}
+
+let quizLocked = false;
+
+function answerQuiz(ans, idx) {
+  if (quizLocked) return;
+  quizLocked = true;
+  let ch = quizChars[quizIndex];
+  let correct = ans === ch.c;
+  quizResults.push(correct);
+  srsUpdate(ch, correct);
+
+  let el = document.getElementById('opt-'+idx);
+  if (correct) el.classList.add('correct');
+  else {
+    el.classList.add('wrong');
+    document.querySelectorAll('.quiz-option').forEach(opt => {
+      if (opt.textContent === ch.c) opt.classList.add('correct');
+    });
+  }
+
+  setTimeout(() => {
+    quizIndex++;
+    quizLocked = false;
+    renderQuiz();
+  }, correct ? 500 : 1000);
+}
+
+function showResults() {
+  let correct = quizResults.filter(r=>r).length;
+  checkStreak();
+  checkAchievements();
+  saveData();
+  let emoji, title;
+  if (correct === 10) { emoji = '🎉'; title = '太厉害了！全对！'; }
+  else if (correct >= 8) { emoji = '👍'; title = '非常棒！'; }
+  else if (correct >= 6) { emoji = '💪'; title = '还不错！继续加油！'; }
+  else { emoji = '📚'; title = '多练几次就好了！'; }
+  document.getElementById('result-title').textContent = title;
+  document.getElementById('result-emoji').textContent = emoji;
+  document.getElementById('result-detail').innerHTML = `
+正确 <b style="color:var(--success);font-size:24px">${correct}</b> / ${quizChars.length} 题`;
+  document.getElementById('result-modal').style.display = 'flex';
+}
+
+function closeResultModal() {
+  document.getElementById('result-modal').style.display = 'none';
+  document.getElementById('quiz-area').innerHTML = `
+<p style="text-align:center;color:var(--text3);margin-bottom:16px">选择一个单元开始练习</p>
+<button class="btn btn-primary btn-lg" onclick="startPractice()">再来一局</button>
+`;
+  switchPage('home');
+}
+
+// ==================== 复习页 ====================
+function renderReview() {
+  let queue = getReviewQueue();
+  document.getElementById('review-count').textContent = queue.length;
+  document.getElementById('btn-start-review').style.display = queue.length > 0 ? '' : 'none';
+  if (queue.length === 0) {
+    document.querySelector('#page-review .review-queue .hint').textContent = '暂时没有需要复习的字 🎉';
+  }
+}
+
+function startReview() {
+  let queue = getReviewQueue();
+  if (queue.length === 0) return;
+  shuffle(queue);
+  quizChars = queue.slice(0, Math.min(10, queue.length));
+  quizIndex = 0;
+  quizResults = [];
+  quizLocked = false;
+  appData.totalPractice++;
+  saveData();
+  renderQuiz();
+  switchPage('practice');
+}
+
+// ==================== 我的页 ====================
+function renderMe() {
+  let learned = getLearned().length;
+  let mastered = ALL_CHARS.filter(ch => {
+    let s = appData.chars[charKey(ch)];
+    return s && s.state === 'mastered';
+  }).length;
+  document.getElementById('me-learned').textContent = learned;
+  document.getElementById('me-mastered').textContent = mastered;
+  document.getElementById('me-streak').textContent = appData.streak;
+  document.getElementById('me-total-practice').textContent = appData.totalPractice;
+
+  let ag = document.getElementById('achievement-grid');
+  ag.innerHTML = ACHIEVEMENTS.map(a => {
+    let earned = !!appData.achievements[a.id];
+    return `<div class="achievement-item ${earned?'earned':'locked'}">
+<div class="icon">${a.icon}</div>
+<div class="name">${a.name}</div>
+</div>`;
+  }).join('');
+}
+
+function resetAll() {
+  if (!confirm('⚠️ 确定要重置全部学习数据吗？')) return;
+  if (!confirm('最后确认：此操作不可恢复！\n建议先点"导出进度"保存备份。\n\n继续重置？')) return;
+  appData = defaultData();
+  saveData();
+  switchPage('home');
+}
+
+function exportData() {
+  let blob = new Blob([JSON.stringify(appData, null, 2)], {type:'application/json'});
+  let a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '识字宝_进度备份_' + todayStr() + '.json';
+  a.click();
+}
+
+function importData(e) {
+  let file = e.target.files[0];
+  if (!file) return;
+  let reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      let data = JSON.parse(ev.target.result);
+      if (!data.chars) throw new Error('无效的备份文件');
+      if (!confirm('导入将覆盖当前学习进度，确定继续？')) return;
+      appData = deepMerge(defaultData(), data);
+      saveData();
+      alert('导入成功！');
+      switchPage('me');
+    } catch(err) { alert('文件格式错误，请选择识字宝导出的备份文件。'); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+// ==================== 初始化 ====================
+function init() {
+  initSpeech();
+  renderHome();
+}
+
+// Service Worker 注册
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+
+init();
+</script>
+<audio id="tts-audio" preload="none"></audio>
+</body>
+</html>

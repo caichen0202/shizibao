@@ -1,0 +1,8 @@
+{
+  "appId": "com.shizibao.kids",
+  "appName": "识字宝",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  }
+}
