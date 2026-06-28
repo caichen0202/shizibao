@@ -13,11 +13,11 @@
 <style>
 :root{--bg:#f5f7fa;--card:#fff;--primary:#4A90D9;--primary-light:#e8f0fb;--success:#52c41a;--success-light:#f0fbe8;--danger:#e24b4a;--danger-light:#fcebeb;--warning:#ef9f27;--warning-light:#feefd8;--text:#1a1a1a;--text2:#666;--text3:#999;--border:#e8e8e8;--radius:12px;--radius-sm:8px;--shadow:0 2px 12px rgba(0,0,0,.06)}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased;min-height:100vh;min-height:100dvh;padding-bottom:72px;user-select:none}
-.page{display:none;padding:16px;animation:fadeIn .25s ease}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased;min-height:100vh;min-height:100dvh;padding-bottom:calc(80px + env(safe-area-inset-bottom, 24px));user-select:none}
+.page{display:none;padding:16px;padding-bottom:calc(24px + env(safe-area-inset-bottom, 24px));animation:fadeIn .25s ease}
 .page.active{display:block}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-.tab-bar{position:fixed;bottom:0;left:0;right:0;height:64px;background:var(--card);border-top:1px solid var(--border);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom)}
+.tab-bar{position:fixed;bottom:0;left:0;right:0;min-height:56px;background:var(--card);border-top:1px solid var(--border);display:flex;align-items:center;z-index:100;padding:6px 0 calc(6px + env(safe-area-inset-bottom, 20px))}
 .tab-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;transition:all .2s;color:var(--text3);font-size:10px;border:none;background:none}
 .tab-item.active{color:var(--primary)}
 .tab-item svg{width:24px;height:24px}
@@ -275,6 +275,39 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
 <script src="hanzi-writer.min.js"></script>
 <script src="chars.js"></script>
 <script>
+// ==================== WebView 兼容层 ====================
+// alert/confirm 在 Android WebView 中默认不工作，用 DOM 弹窗代替
+function showToast(msg, duration) {
+  duration = duration || 2000;
+  let t = document.getElementById('toast-msg');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast-msg';
+    t.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.78);color:#fff;padding:12px 24px;border-radius:8px;font-size:15px;z-index:9999;pointer-events:none;transition:opacity .3s;text-align:center;max-width:80vw';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  t.style.display = 'block';
+  clearTimeout(t._tid);
+  t._tid = setTimeout(function() { t.style.opacity = '0'; setTimeout(function() { t.style.display = 'none'; }, 300); }, duration);
+}
+
+function showConfirm(msg, onOk, onCancel) {
+  let m = document.getElementById('confirm-modal');
+  if (!m) {
+    m = document.createElement('div');
+    m.id = 'confirm-modal';
+    m.innerHTML = '<div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);z-index:9998;display:flex;align-items:center;justify-content:center" id="confirm-overlay"><div style="background:#fff;border-radius:12px;padding:24px;max-width:300px;width:90%;text-align:center"><p id="confirm-text" style="font-size:15px;margin-bottom:20px;color:#1a1a1a"></p><div style="display:flex;gap:10px"><button id="confirm-cancel" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;background:#fff;font-size:15px">取消</button><button id="confirm-ok" style="flex:1;padding:10px;border:none;border-radius:8px;background:#4A90D9;color:#fff;font-size:15px">确定</button></div></div></div>';
+    document.body.appendChild(m);
+  }
+  m.style.display = 'block';
+  document.getElementById('confirm-text').textContent = msg;
+  document.getElementById('confirm-overlay').onclick = function(e) { if (e.target === this) { m.style.display = 'none'; if (onCancel) onCancel(); } };
+  document.getElementById('confirm-ok').onclick = function() { m.style.display = 'none'; if (onOk) onOk(); };
+  document.getElementById('confirm-cancel').onclick = function() { m.style.display = 'none'; if (onCancel) onCancel(); };
+}
+
 // ==================== 应用状态 ====================
 const STORAGE_KEY = 'shizibao_data';
 let appData = loadData();
@@ -732,7 +765,7 @@ function openChar(c, g, v, u) {
 function startPractice() {
   let pool = getLearned();
   if (pool.length < 4) pool = ALL_CHARS.slice(0, 20);
-  if (pool.length < 4) return alert('数据太少，请先学习一些字');
+  if (pool.length < 4) return showToast('数据太少，请先学习一些字', 2500);
   shuffle(pool);
   quizChars = pool.slice(0, 10);
   quizIndex = 0;
@@ -873,11 +906,13 @@ function renderMe() {
 }
 
 function resetAll() {
-  if (!confirm('⚠️ 确定要重置全部学习数据吗？')) return;
-  if (!confirm('最后确认：此操作不可恢复！\n建议先点"导出进度"保存备份。\n\n继续重置？')) return;
-  appData = defaultData();
-  saveData();
-  switchPage('home');
+  showConfirm('确定要重置全部学习数据吗？', function() {
+    showConfirm('最后确认：此操作不可恢复！\n建议先点"导出进度"保存备份。\n\n继续重置？', function() {
+      appData = defaultData();
+      saveData();
+      switchPage('home');
+    });
+  });
 }
 
 function exportData() {
@@ -896,12 +931,13 @@ function importData(e) {
     try {
       let data = JSON.parse(ev.target.result);
       if (!data.chars) throw new Error('无效的备份文件');
-      if (!confirm('导入将覆盖当前学习进度，确定继续？')) return;
-      appData = deepMerge(defaultData(), data);
-      saveData();
-      alert('导入成功！');
-      switchPage('me');
-    } catch(err) { alert('文件格式错误，请选择识字宝导出的备份文件。'); }
+      showConfirm('导入将覆盖当前学习进度，确定继续？', function() {
+        appData = deepMerge(defaultData(), data);
+        saveData();
+        showToast('导入成功！');
+        switchPage('me');
+      });
+    } catch(err) { showToast('文件格式错误，请选择识字宝导出的备份文件。', 2500); }
   };
   reader.readAsText(file);
   e.target.value = '';
